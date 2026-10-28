@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1 (2026-10-28)
+
+- Released under the MIT License
+
 ## 0.1.0 (2026-10-28)
 
 First development release.

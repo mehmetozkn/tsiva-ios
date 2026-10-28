@@ -141,6 +141,10 @@ xcodebuild test -scheme Tsiva -destination 'platform=iOS Simulator,name=iPhone 1
 Crash reporting, automatic HTTP instrumentation, performance monitoring and a persistent (on-disk) queue are
 planned for later releases.
 
+### License
+
+Tsiva is released under the [MIT License](LICENSE).
+
 ---
 
 ## Türkçe
@@ -279,3 +283,7 @@ xcodebuild test -scheme Tsiva -destination 'platform=iOS Simulator,name=iPhone 1
 
 Crash raporlama, otomatik HTTP izleme, performans takibi ve kalıcı (disk tabanlı) kuyruk sonraki sürümlerde
 planlanmaktadır.
+
+### Lisans
+
+Tsiva, [MIT Lisansı](LICENSE) ile yayınlanmaktadır.
