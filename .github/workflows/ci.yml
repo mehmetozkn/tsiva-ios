@@ -12,5 +12,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test (macOS)
         run: swift test
-      - name: Build (iOS Simulator)
-        run: xcodebuild build -scheme Tsiva -destination 'generic/platform=iOS Simulator'
+      - name: Test (iOS Simulator)
+        run: |
+          DEVICE_ID=$(xcrun simctl list devices available -j | jq -r '[.devices | to_entries[] | select(.key | contains("iOS")) | .value[] | select(.name | startswith("iPhone"))][0].udid')
+          xcodebuild test -scheme Tsiva -destination "id=$DEVICE_ID"
