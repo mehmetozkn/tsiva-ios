@@ -16,8 +16,22 @@ final class IdentityTests: XCTestCase {
         client.track("after", properties: [:])
         await client.flush()
 
-        XCTAssertEqual(sender.sentEvents.map(\.userId), [nil, "user-42"])
+        XCTAssertEqual(sender.sentEvents.map(\.name), ["before", "$identify", "after"])
+        XCTAssertEqual(sender.sentEvents.map(\.userId), [nil, "user-42", "user-42"])
         XCTAssertEqual(client.userId, "user-42")
+    }
+
+    func testIdentifyWithTheSameIdSendsNothingNew() async {
+        let sender = MockSender()
+        let client = makeClient(defaults: makeTestDefaults(), sender: sender)
+        defer { client.shutdown() }
+
+        client.identify("user-42")
+        client.identify("user-42")
+        client.identify("user-43")
+        await client.flush()
+
+        XCTAssertEqual(sender.sentEvents.map(\.userId), ["user-42", "user-43"])
     }
 
     func testUserIdIsRememberedAcrossLaunches() {

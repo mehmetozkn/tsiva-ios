@@ -143,5 +143,5 @@ extension TsivaContext {
 /// Identity of this SDK, reported in every event and in the `User-Agent` header.
 public enum TsivaSDK {
     public static let name = "tsiva-ios"
-    public static let version = "0.3.0"
+    public static let version = "0.3.1"
 }

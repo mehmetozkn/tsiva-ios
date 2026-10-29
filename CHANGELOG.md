@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.1 (2026-10-29)
+
+- `identify` sends a reserved `$identify` event when the user id changes, so the backend links the install to
+  the user immediately, including when no other event follows
+
 ## 0.3.0 (2026-10-29)
 
 - `Tsiva.identify(userId:)` attaches your own user identifier to every following event and crash report, and

@@ -51,6 +51,9 @@ apply rate limits, quotas and payload validation per key, and must never grant r
 | `anonymous_id` | string | Random per-install ID, persisted on the device. Not derived from IDFA/IDFV. |
 | `session_id` | string | New on every app launch (every `Tsiva.configure`). |
 | `user_id` | string, optional | The app's own user identifier from `Tsiva.identify(userId:)`, 1 to 128 characters. Omitted until set. |
+
+An event named `$identify` is sent when the user id changes. It links the install (`anonymous_id`) to the user
+(`user_id`) and must not be stored or counted as an event.
 | `context.app.*` | string | Every field is optional and is omitted when unavailable. |
 
 All timestamps are ISO 8601, UTC, millisecond precision.

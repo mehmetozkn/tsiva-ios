@@ -153,9 +153,17 @@ final class TsivaClient: Sendable {
             logger.error("identify() ignored: userId must be 1 to \(UserID.maxLength) characters")
             return
         }
-        identity.withLock { $0.userId = trimmed }
+        let changed = identity.withLock { identity -> Bool in
+            defer { identity.userId = trimmed }
+            return identity.userId != trimmed
+        }
+        guard changed else { return }
         defaults.withLock { UserID.save(trimmed, in: $0) }
         crashReporter?.saveSession(crashSession())
+        // Tells the backend right away which user this install belongs to, so events the install sent before
+        // being identified are attributed too, even if no other event follows. The backend does not store it
+        // as an event.
+        track(UserID.identifyEvent, properties: [:])
         logger.debug("Identified user")
     }
 
@@ -226,6 +234,8 @@ enum AnonymousID {
 enum UserID {
     static let defaultsKey = "com.tsiva.user_id"
     static let maxLength = 128
+    /// Reserved event name sent when the user id changes.
+    static let identifyEvent = "$identify"
 
     static func load(from defaults: UserDefaults) -> String? {
         defaults.string(forKey: defaultsKey).flatMap { $0.isEmpty ? nil : $0 }

@@ -16,7 +16,7 @@ Tsiva backend. It has no third-party dependencies.
 - Built-in filtering of sensitive properties, privacy manifest included
 - Crash reporting for fatal signals and uncaught exceptions
 
-> **Status:** `0.3.0`, an early development release. The public API may still change before `1.0`.
+> **Status:** `0.3.1`, an early development release. The public API may still change before `1.0`.
 
 ### Installation
 
@@ -31,7 +31,7 @@ https://github.com/mehmetozkn/tsiva-ios
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.3.0")
+    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.3.1")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [.product(name: "Tsiva", package: "tsiva-ios")])
@@ -202,7 +202,7 @@ iOS uygulamaları için hafif bir event takip SDK'sı. Tsiva, uygulamanızın ka
 - Hassas property'lerin otomatik filtrelenmesi, privacy manifest dahil
 - Ölümcül sinyaller ve yakalanmamış exception'lar için crash raporlama
 
-> **Durum:** `0.3.0`, erken geliştirme sürümü. Public API `1.0`'a kadar değişebilir.
+> **Durum:** `0.3.1`, erken geliştirme sürümü. Public API `1.0`'a kadar değişebilir.
 
 ### Kurulum
 
@@ -217,7 +217,7 @@ https://github.com/mehmetozkn/tsiva-ios
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.3.0")
+    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.3.1")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [.product(name: "Tsiva", package: "tsiva-ios")])
