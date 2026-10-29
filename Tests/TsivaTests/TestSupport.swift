@@ -96,7 +96,8 @@ extension TsivaConfiguration {
             maxRetries: maxRetries,
             beforeSend: beforeSend,
             logLevel: .none,
-            flushOnBackground: false
+            flushOnBackground: false,
+            crashReportingEnabled: false
         )
     }
 }

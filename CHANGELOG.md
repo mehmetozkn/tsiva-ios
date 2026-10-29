@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.0 (2026-10-29)
+
+- Crash reporting: fatal signals (SIGSEGV, SIGBUS, SIGABRT, SIGILL, SIGFPE, SIGTRAP, including Swift runtime
+  traps such as force-unwrapping `nil`) and uncaught Objective-C exceptions are recorded and sent to
+  `POST /v1/crashes` on the next launch. Enabled by default; turn off with `crashReportingEnabled: false`
+- Reports include the crashed thread's stack with binary names, offsets and UUIDs for symbolication
+- Privacy manifest declares crash data
+
 ## 0.1.1 (2026-10-28)
 
 - Released under the MIT License

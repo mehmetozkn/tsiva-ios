@@ -63,3 +63,37 @@ All timestamps are ISO 8601, UTC, millisecond precision.
 | any other `4xx` | Batch dropped immediately, without retrying. Use `400` for an invalid payload, `401` for an unknown key and `413` for an oversized body. |
 
 The response body is ignored.
+
+## Crash reports: `POST {endpoint}/v1/crashes`
+
+Same headers as `/v1/events`. One report per request, sent on the launch after the crash.
+
+```json
+{
+  "id": "4F1A6C2E-6B8D-4C55-9E0B-6A1F7B3D2C11",
+  "timestamp": "2026-10-29T09:27:15.000Z",
+  "kind": "signal",
+  "signal": { "number": 11, "name": "SIGSEGV", "code": 1, "fault_address": "0x8" },
+  "exception": null,
+  "frames": [
+    { "address": "0x100004280", "image": "MyApp", "offset": 17024, "in_app": true },
+    { "address": "0x18b2c1234", "image": "libdyld.dylib", "offset": 4660, "in_app": false }
+  ],
+  "images": [
+    { "name": "MyApp", "uuid": "1F2E3D4C-5B6A-7980-1A2B-3C4D5E6F7A8B", "load_address": "0x100000000", "size": 65536 }
+  ],
+  "anonymous_id": "AB543922-05B7-4C76-97BB-9F7B9741A03E",
+  "session_id": "B6D0D173-8604-483A-8179-53406E9F951D",
+  "context": { "sdk": { "name": "tsiva-ios", "version": "0.2.0" }, "app": { "version": "1.2.0" }, "os": { "name": "iOS", "version": "26.0" }, "device": { "model": "iPhone16,2" }, "locale": "tr_TR", "timezone": "Europe/Istanbul" }
+}
+```
+
+| Field | Notes |
+|---|---|
+| `kind` | `signal` (with `signal`) or `exception` (with `exception: {name, reason}`). |
+| `frames` | The crashed thread's stack, innermost first, at most 100. `image`/`offset` are missing when the address is in no known binary. `in_app` marks the app's own executable. |
+| `images` | Only the binaries that appear in `frames`. With `uuid` and `load_address`, a frame can be symbolicated using the app's dSYM. |
+| `anonymous_id`, `session_id`, `context` | From the session that crashed, not the one that sends the report. |
+
+Responses follow the same rules as `/v1/events`: `2xx` deletes the report, `4xx` drops it, `429`/`5xx`/network
+errors keep it for the next launch. Retries resend the same `id`, so the backend must deduplicate on it.

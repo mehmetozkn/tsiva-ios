@@ -37,6 +37,10 @@ public struct TsivaConfiguration: Sendable {
     /// When `true`, queued events are flushed as the app moves to the background (iOS only).
     public var flushOnBackground: Bool
 
+    /// When `true`, crashes (fatal signals and uncaught Objective-C exceptions) are recorded and sent on the
+    /// next launch. Only one crash reporter can be active in an app; disable this if you use another one.
+    public var crashReportingEnabled: Bool
+
     public init(
         apiKey: String,
         endpoint: URL,
@@ -48,7 +52,8 @@ public struct TsivaConfiguration: Sendable {
         redactedPropertyKeys: Set<String> = TsivaConfiguration.defaultRedactedPropertyKeys,
         beforeSend: (@Sendable (TsivaEvent) -> TsivaEvent?)? = nil,
         logLevel: TsivaLogLevel = .error,
-        flushOnBackground: Bool = true
+        flushOnBackground: Bool = true,
+        crashReportingEnabled: Bool = true
     ) {
         self.apiKey = apiKey
         self.endpoint = endpoint
@@ -61,6 +66,7 @@ public struct TsivaConfiguration: Sendable {
         self.beforeSend = beforeSend
         self.logLevel = logLevel
         self.flushOnBackground = flushOnBackground
+        self.crashReportingEnabled = crashReportingEnabled
     }
 
     /// Property keys removed by default because they commonly carry credentials or personal data.

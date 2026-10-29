@@ -14,8 +14,9 @@ Tsiva backend. It has no third-party dependencies.
 - Thread-safe, never crashes or blocks the host app
 - Batched uploads with retry and exponential backoff
 - Built-in filtering of sensitive properties, privacy manifest included
+- Crash reporting for fatal signals and uncaught exceptions
 
-> **Status:** `0.1.0`, an early development release. The public API may still change before `1.0`.
+> **Status:** `0.2.0`, an early development release. The public API may still change before `1.0`.
 
 ### Installation
 
@@ -30,7 +31,7 @@ https://github.com/mehmetozkn/tsiva-ios
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.1.0")
+    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.2.0")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [.product(name: "Tsiva", package: "tsiva-ios")])
@@ -101,6 +102,32 @@ Tsiva.configure(TsivaConfiguration(
 
 `configure` should be called only once. Later calls are ignored and a warning is logged.
 
+### Crash reporting
+
+Crashes are captured automatically once `Tsiva.configure` has run: fatal signals (SIGSEGV, SIGBUS, SIGABRT,
+SIGILL, SIGFPE, SIGTRAP; this includes Swift runtime errors such as force-unwrapping `nil` or an array index
+out of range) and uncaught Objective-C exceptions. The report is saved to disk at the moment of the crash and
+sent on the next launch; the app still terminates normally, so Xcode's and the system's crash reports keep
+working.
+
+Each report contains the crashed thread's stack (with the binary and offset of every frame), the binaries'
+UUIDs and load addresses, and the device, OS and app version of the session that crashed. Frames are not
+symbolicated on the device; to turn an address into a function name, use the matching dSYM:
+
+```bash
+atos -arch arm64 -o MyApp.app.dSYM/Contents/Resources/DWARF/MyApp -l <load_address> <address>
+```
+
+Only one crash reporter can own the signal handlers. If you use another one (e.g. Crashlytics), disable
+Tsiva's:
+
+```swift
+Tsiva.configure(TsivaConfiguration(apiKey: "…", endpoint: url, crashReportingEnabled: false))
+```
+
+Crashes are not captured while the debugger is attached, because the debugger intercepts the signals first.
+Run the app without Xcode attached to test it.
+
 ### Privacy
 
 - **Sensitive keys are removed** before an event is queued. By default, any property whose key contains
@@ -112,7 +139,7 @@ Tsiva.configure(TsivaConfiguration(
 - **Collected context:** SDK version, app bundle ID/version/build, OS name/version, hardware model
   (e.g. `iPhone16,2`), locale and time zone.
 - **Privacy manifest:** the package ships a `PrivacyInfo.xcprivacy` that declares product-interaction data
-  for analytics (not linked to the user, not used for tracking) and its `UserDefaults` usage.
+  for analytics and crash data (neither linked to the user nor used for tracking) and its `UserDefaults` usage.
 - Events are kept **in memory only**. Events that have not been uploaded yet are lost if the app is
   terminated.
 
@@ -138,8 +165,8 @@ xcodebuild test -scheme Tsiva -destination 'platform=iOS Simulator,name=iPhone 1
 
 ### Roadmap
 
-Crash reporting, automatic HTTP instrumentation, performance monitoring and a persistent (on-disk) queue are
-planned for later releases.
+Server-side symbolication (dSYM upload), automatic HTTP instrumentation, performance monitoring and a
+persistent (on-disk) event queue are planned for later releases.
 
 ### License
 
@@ -157,8 +184,9 @@ iOS uygulamaları için hafif bir event takip SDK'sı. Tsiva, uygulamanızın ka
 - Thread-safe; host uygulamayı asla çökertmez veya bloklamaz
 - Retry ve üstel bekleme (exponential backoff) ile paketli gönderim
 - Hassas property'lerin otomatik filtrelenmesi, privacy manifest dahil
+- Ölümcül sinyaller ve yakalanmamış exception'lar için crash raporlama
 
-> **Durum:** `0.1.0`, erken geliştirme sürümü. Public API `1.0`'a kadar değişebilir.
+> **Durum:** `0.2.0`, erken geliştirme sürümü. Public API `1.0`'a kadar değişebilir.
 
 ### Kurulum
 
@@ -173,7 +201,7 @@ https://github.com/mehmetozkn/tsiva-ios
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.1.0")
+    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.2.0")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [.product(name: "Tsiva", package: "tsiva-ios")])
@@ -244,6 +272,32 @@ Tsiva.configure(TsivaConfiguration(
 
 `configure` yalnızca bir kez çağrılmalıdır. Sonraki çağrılar yok sayılır ve bir uyarı loglanır.
 
+### Crash raporlama
+
+`Tsiva.configure` çalıştıktan sonra çökmeler otomatik olarak yakalanır: ölümcül sinyaller (SIGSEGV, SIGBUS,
+SIGABRT, SIGILL, SIGFPE, SIGTRAP; `nil` bir optional'ı zorla açmak veya dizi sınırı dışına çıkmak gibi Swift
+çalışma zamanı hataları da buna dahildir) ve yakalanmamış Objective-C exception'ları. Rapor çökme anında diske
+kaydedilir ve bir sonraki açılışta gönderilir. Uygulama yine normal şekilde kapanır; Xcode'un ve sistemin
+çökme raporları çalışmaya devam eder.
+
+Her rapor; çöken thread'in çağrı yığınını (her çerçevenin binary'si ve offset'iyle), binary'lerin UUID ve
+yükleme adreslerini, çöken oturumun cihaz, işletim sistemi ve uygulama sürümünü içerir. Çerçeveler cihazda
+sembolleştirilmez; bir adresi fonksiyon adına çevirmek için ilgili dSYM'yi kullanın:
+
+```bash
+atos -arch arm64 -o MyApp.app.dSYM/Contents/Resources/DWARF/MyApp -l <load_address> <address>
+```
+
+Sinyal yakalayıcıları aynı anda yalnızca bir crash raporlayıcı kullanabilir. Başka bir araç (ör. Crashlytics)
+kullanıyorsanız Tsiva'nınkini kapatın:
+
+```swift
+Tsiva.configure(TsivaConfiguration(apiKey: "…", endpoint: url, crashReportingEnabled: false))
+```
+
+Debugger bağlıyken çökmeler yakalanmaz, çünkü sinyalleri önce debugger alır. Denemek için uygulamayı Xcode
+bağlı olmadan çalıştırın.
+
 ### Gizlilik
 
 - **Hassas anahtarlar** event kuyruğa alınmadan önce silinir. Varsayılan olarak anahtarında `password`,
@@ -255,8 +309,9 @@ Tsiva.configure(TsivaConfiguration(
   `anonymousId` atanır. Tsiva IDFA veya IDFV kullanmaz ve App Tracking Transparency izni gerektirmez.
 - **Toplanan bağlam bilgisi:** SDK sürümü, uygulamanın bundle ID/sürüm/build bilgisi, işletim sistemi
   adı/sürümü, donanım modeli (ör. `iPhone16,2`), dil/bölge ve saat dilimi.
-- **Privacy manifest:** Paket, analitik amaçlı ürün etkileşimi verisini (kullanıcıya bağlı değil, takip için
-  kullanılmaz) ve `UserDefaults` kullanımını beyan eden bir `PrivacyInfo.xcprivacy` içerir.
+- **Privacy manifest:** Paket, analitik amaçlı ürün etkileşimi verisini ve crash verisini (ikisi de kullanıcıya
+  bağlı değil, takip için kullanılmaz) ve `UserDefaults` kullanımını beyan eden bir `PrivacyInfo.xcprivacy`
+  içerir.
 - Event'ler **yalnızca bellekte** tutulur. Uygulama kapatılırsa henüz gönderilmemiş event'ler kaybolur.
 
 Event property'lerine isim, e-posta veya kullanıcının serbest metin girdisi gibi kişisel veriler koymayın.
@@ -281,8 +336,8 @@ xcodebuild test -scheme Tsiva -destination 'platform=iOS Simulator,name=iPhone 1
 
 ### Yol haritası
 
-Crash raporlama, otomatik HTTP izleme, performans takibi ve kalıcı (disk tabanlı) kuyruk sonraki sürümlerde
-planlanmaktadır.
+Sunucu tarafında sembolleştirme (dSYM yükleme), otomatik HTTP izleme, performans takibi ve kalıcı (disk
+tabanlı) event kuyruğu sonraki sürümlerde planlanmaktadır.
 
 ### Lisans
 

@@ -17,6 +17,7 @@ final class TsivaClient: Sendable {
     private let commands: AsyncStream<Command>.Continuation
     private let tasks: [Task<Void, Never>]
     private let lifecycleObserver: Locked<LifecycleObserver?>
+    let crashReporter: CrashReporter?
 
     private enum Command: Sendable {
         case track(TsivaEvent)
@@ -26,16 +27,19 @@ final class TsivaClient: Sendable {
     init(
         configuration: TsivaConfiguration,
         sender: EventSender? = nil,
+        crashSender: CrashSender? = nil,
+        crashDirectory: URL? = CrashReporter.defaultDirectory(),
         defaults: UserDefaults = .standard,
         context: TsivaContext = .current()
     ) {
         let configuration = configuration.validated()
         let logger = TsivaLogger(level: configuration.logLevel)
-        let sender = sender ?? NetworkTransport(
+        let transport = NetworkTransport(
             apiKey: configuration.apiKey,
             endpoint: configuration.endpoint,
             timeout: configuration.requestTimeout
         )
+        let sender = sender ?? transport
         let queue = EventQueue(
             sender: sender,
             batchSize: configuration.flushAt,
@@ -74,8 +78,24 @@ final class TsivaClient: Sendable {
                 await queue.flush(ignoringBackoff: false)
             }
         }
-        self.tasks = [consumer, timer]
+        var tasks = [consumer, timer]
         self.lifecycleObserver = Locked(nil)
+
+        if configuration.crashReportingEnabled, let crashDirectory {
+            let reporter = CrashReporter(directory: crashDirectory, logger: logger)
+            reporter.start(session: CrashSession(
+                anonymousId: anonymousId,
+                sessionId: sessionId,
+                context: context,
+                executableName: Bundle.main.executableURL?.lastPathComponent ?? ProcessInfo.processInfo.processName
+            ))
+            let crashSender = crashSender ?? transport
+            tasks.append(Task { await reporter.sendPending(using: crashSender) })
+            self.crashReporter = reporter
+        } else {
+            self.crashReporter = nil
+        }
+        self.tasks = tasks
 
         if configuration.flushOnBackground {
             let observer = LifecycleObserver { [weak self] in self }

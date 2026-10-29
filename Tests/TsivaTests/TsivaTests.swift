@@ -40,7 +40,12 @@ final class TsivaTests: XCTestCase {
     }
 
     func testConfigureWithValidInput() {
-        Tsiva.configure(apiKey: "key", endpoint: URL(string: "https://api.example.com")!)
+        Tsiva.configure(TsivaConfiguration(
+            apiKey: "key",
+            endpoint: URL(string: "https://api.example.com")!,
+            logLevel: .none,
+            crashReportingEnabled: false
+        ))
         XCTAssertTrue(Tsiva.isConfigured)
         XCTAssertNotNil(Tsiva.anonymousId)
     }

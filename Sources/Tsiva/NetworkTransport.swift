@@ -38,8 +38,8 @@ struct EventBatch: Codable, Equatable {
     }
 }
 
-/// Sends event batches to the Tsiva API over HTTP.
-struct NetworkTransport: EventSender {
+/// Sends event batches and crash reports to the Tsiva API over HTTP.
+struct NetworkTransport: EventSender, CrashSender {
     static let apiKeyHeader = "X-Tsiva-Api-Key"
 
     let apiKey: String
@@ -66,23 +66,41 @@ struct NetworkTransport: EventSender {
         endpoint.appendingPathComponent("v1").appendingPathComponent("events")
     }
 
+    var crashesURL: URL {
+        endpoint.appendingPathComponent("v1").appendingPathComponent("crashes")
+    }
+
     func makeRequest(for events: [TsivaEvent]) throws -> URLRequest {
-        var request = URLRequest(url: eventsURL, timeoutInterval: timeout)
+        try makeRequest(url: eventsURL, body: EventBatch(sentAt: now(), events: events))
+    }
+
+    func makeRequest(url: URL, body: some Encodable) throws -> URLRequest {
+        var request = URLRequest(url: url, timeoutInterval: timeout)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue(apiKey, forHTTPHeaderField: Self.apiKeyHeader)
         request.setValue("\(TsivaSDK.name)/\(TsivaSDK.version)", forHTTPHeaderField: "User-Agent")
-        request.httpBody = try TsivaJSON.makeEncoder().encode(EventBatch(sentAt: now(), events: events))
+        request.httpBody = try TsivaJSON.makeEncoder().encode(body)
         return request
     }
 
     func send(_ events: [TsivaEvent]) async -> DeliveryResult {
-        let request: URLRequest
         do {
-            request = try makeRequest(for: events)
+            return await deliver(try makeRequest(for: events))
         } catch {
             return .rejected(reason: "Could not encode events: \(error.localizedDescription)")
         }
+    }
+
+    func sendCrash(_ report: CrashReport) async -> DeliveryResult {
+        do {
+            return await deliver(try makeRequest(url: crashesURL, body: report))
+        } catch {
+            return .rejected(reason: "Could not encode the crash report: \(error.localizedDescription)")
+        }
+    }
+
+    private func deliver(_ request: URLRequest) async -> DeliveryResult {
 
         let response: URLResponse
         do {
