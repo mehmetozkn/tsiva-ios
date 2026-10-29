@@ -16,7 +16,7 @@ Tsiva backend. It has no third-party dependencies.
 - Built-in filtering of sensitive properties, privacy manifest included
 - Crash reporting for fatal signals and uncaught exceptions
 
-> **Status:** `0.2.0`, an early development release. The public API may still change before `1.0`.
+> **Status:** `0.3.0`, an early development release. The public API may still change before `1.0`.
 
 ### Installation
 
@@ -31,7 +31,7 @@ https://github.com/mehmetozkn/tsiva-ios
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.2.0")
+    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.3.0")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [.product(name: "Tsiva", package: "tsiva-ios")])
@@ -101,6 +101,22 @@ Tsiva.configure(TsivaConfiguration(
 ```
 
 `configure` should be called only once. Later calls are ignored and a warning is logged.
+
+### Identifying users
+
+Every event carries an `anonymousId`: a random id created on first launch. It stays the same across launches
+and app updates, but changes when the app is deleted and reinstalled, and differs between devices.
+
+To follow a user across reinstalls and devices, pass your own identifier for them:
+
+```swift
+Tsiva.identify(userId: account.id)   // e.g. after login; remembered across launches
+Tsiva.reset()                        // on logout: forgets the user and starts a new anonymous id
+```
+
+Use an opaque id, never an email address or a name. Once you identify users, their data is linked to them:
+declare analytics and crash data as **Linked to You** in your App Store privacy details and mention it in your
+privacy policy.
 
 ### Crash reporting
 
@@ -186,7 +202,7 @@ iOS uygulamaları için hafif bir event takip SDK'sı. Tsiva, uygulamanızın ka
 - Hassas property'lerin otomatik filtrelenmesi, privacy manifest dahil
 - Ölümcül sinyaller ve yakalanmamış exception'lar için crash raporlama
 
-> **Durum:** `0.2.0`, erken geliştirme sürümü. Public API `1.0`'a kadar değişebilir.
+> **Durum:** `0.3.0`, erken geliştirme sürümü. Public API `1.0`'a kadar değişebilir.
 
 ### Kurulum
 
@@ -201,7 +217,7 @@ https://github.com/mehmetozkn/tsiva-ios
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.2.0")
+    .package(url: "https://github.com/mehmetozkn/tsiva-ios", from: "0.3.0")
 ],
 targets: [
     .target(name: "MyApp", dependencies: [.product(name: "Tsiva", package: "tsiva-ios")])
@@ -271,6 +287,22 @@ Tsiva.configure(TsivaConfiguration(
 ```
 
 `configure` yalnızca bir kez çağrılmalıdır. Sonraki çağrılar yok sayılır ve bir uyarı loglanır.
+
+### Kullanıcıyı tanımlama
+
+Her event bir `anonymousId` taşır: ilk açılışta üretilen rastgele bir kimlik. Açılışlar ve uygulama
+güncellemeleri boyunca aynı kalır; uygulama silinip yeniden yüklenince değişir ve cihazdan cihaza farklıdır.
+
+Bir kullanıcıyı yeniden kurulumlar ve cihazlar arasında takip etmek için kendi kimliğinizi verin:
+
+```swift
+Tsiva.identify(userId: account.id)   // ör. girişten sonra; açılışlar arasında hatırlanır
+Tsiva.reset()                        // çıkışta: kullanıcıyı unutur ve yeni bir anonim kimlik başlatır
+```
+
+E-posta veya isim değil, opak bir kimlik kullanın. Kullanıcıları tanımladığınızda veriler onlara bağlanmış olur:
+App Store gizlilik bilgilerinde analitik ve crash verisini **Linked to You** olarak beyan edin ve gizlilik
+politikanızda belirtin.
 
 ### Crash raporlama
 

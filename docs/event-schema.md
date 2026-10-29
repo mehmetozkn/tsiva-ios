@@ -50,6 +50,7 @@ apply rate limits, quotas and payload validation per key, and must never grant r
 | `properties` | object | Up to 100 keys (max 128 characters each). Values are string (max 1024 characters), integer, number or boolean. |
 | `anonymous_id` | string | Random per-install ID, persisted on the device. Not derived from IDFA/IDFV. |
 | `session_id` | string | New on every app launch (every `Tsiva.configure`). |
+| `user_id` | string, optional | The app's own user identifier from `Tsiva.identify(userId:)`, 1 to 128 characters. Omitted until set. |
 | `context.app.*` | string | Every field is optional and is omitted when unavailable. |
 
 All timestamps are ISO 8601, UTC, millisecond precision.
@@ -93,7 +94,7 @@ Same headers as `/v1/events`. One report per request, sent on the launch after t
 | `kind` | `signal` (with `signal`) or `exception` (with `exception: {name, reason}`). |
 | `frames` | The crashed thread's stack, innermost first, at most 100. `image`/`offset` are missing when the address is in no known binary. `in_app` marks the app's own executable. |
 | `images` | Only the binaries that appear in `frames`. With `uuid` and `load_address`, a frame can be symbolicated using the app's dSYM. |
-| `anonymous_id`, `session_id`, `context` | From the session that crashed, not the one that sends the report. |
+| `anonymous_id`, `session_id`, `user_id`, `context` | From the session that crashed, not the one that sends the report. `user_id` is omitted when not set. |
 
 Responses follow the same rules as `/v1/events`: `2xx` deletes the report, `4xx` drops it, `429`/`5xx`/network
 errors keep it for the next launch. Retries resend the same `id`, so the backend must deduplicate on it.

@@ -7,7 +7,6 @@ import Foundation
 /// events in the order they were tracked.
 final class TsivaClient: Sendable {
     let configuration: TsivaConfiguration
-    let anonymousId: String
     let sessionId: String
     let context: TsivaContext
     let queue: EventQueue
@@ -18,6 +17,17 @@ final class TsivaClient: Sendable {
     private let tasks: [Task<Void, Never>]
     private let lifecycleObserver: Locked<LifecycleObserver?>
     let crashReporter: CrashReporter?
+    private let identity: Locked<Identity>
+    private let defaults: Locked<UserDefaults>
+    private let executableName: String
+
+    private struct Identity {
+        var anonymousId: String
+        var userId: String?
+    }
+
+    var anonymousId: String { identity.withLock { $0.anonymousId } }
+    var userId: String? { identity.withLock { $0.userId } }
 
     private enum Command: Sendable {
         case track(TsivaEvent)
@@ -51,8 +61,13 @@ final class TsivaClient: Sendable {
         self.configuration = configuration
         self.logger = logger
         self.sanitizer = EventSanitizer(redactedKeys: configuration.redactedPropertyKeys)
-        self.anonymousId = AnonymousID.loadOrCreate(in: defaults)
-        self.sessionId = UUID().uuidString
+        let initialIdentity = Identity(anonymousId: AnonymousID.loadOrCreate(in: defaults), userId: UserID.load(from: defaults))
+        let executableName = Bundle.main.executableURL?.lastPathComponent ?? ProcessInfo.processInfo.processName
+        let sessionId = UUID().uuidString
+        self.identity = Locked(initialIdentity)
+        self.defaults = Locked(defaults)
+        self.executableName = executableName
+        self.sessionId = sessionId
         self.context = context
         self.queue = queue
 
@@ -84,10 +99,11 @@ final class TsivaClient: Sendable {
         if configuration.crashReportingEnabled, let crashDirectory {
             let reporter = CrashReporter(directory: crashDirectory, logger: logger)
             reporter.start(session: CrashSession(
-                anonymousId: anonymousId,
+                anonymousId: initialIdentity.anonymousId,
                 sessionId: sessionId,
+                userId: initialIdentity.userId,
                 context: context,
-                executableName: Bundle.main.executableURL?.lastPathComponent ?? ProcessInfo.processInfo.processName
+                executableName: executableName
             ))
             let crashSender = crashSender ?? transport
             tasks.append(Task { await reporter.sendPending(using: crashSender) })
@@ -109,11 +125,13 @@ final class TsivaClient: Sendable {
             return
         }
 
+        let current = identity.withLock { $0 }
         var event = TsivaEvent(
             name: cleanName,
             properties: sanitizer.sanitizeProperties(properties),
-            anonymousId: anonymousId,
+            anonymousId: current.anonymousId,
             sessionId: sessionId,
+            userId: current.userId,
             context: context
         )
 
@@ -126,6 +144,41 @@ final class TsivaClient: Sendable {
         }
 
         commands.yield(.track(event))
+    }
+
+    /// Attaches `userId` to every event tracked from now on, and remembers it across launches.
+    func identify(_ userId: String) {
+        let trimmed = userId.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed.count <= UserID.maxLength else {
+            logger.error("identify() ignored: userId must be 1 to \(UserID.maxLength) characters")
+            return
+        }
+        identity.withLock { $0.userId = trimmed }
+        defaults.withLock { UserID.save(trimmed, in: $0) }
+        crashReporter?.saveSession(crashSession())
+        logger.debug("Identified user")
+    }
+
+    /// Forgets the user and starts a new anonymous identity, e.g. when the user logs out.
+    func reset() {
+        let anonymousId = defaults.withLock { defaults in
+            UserID.save(nil, in: defaults)
+            return AnonymousID.regenerate(in: defaults)
+        }
+        identity.withLock { $0 = Identity(anonymousId: anonymousId, userId: nil) }
+        crashReporter?.saveSession(crashSession())
+        logger.debug("Identity reset")
+    }
+
+    private func crashSession() -> CrashSession {
+        let current = identity.withLock { $0 }
+        return CrashSession(
+            anonymousId: current.anonymousId,
+            sessionId: sessionId,
+            userId: current.userId,
+            context: context,
+            executableName: executableName
+        )
     }
 
     /// Waits until every event tracked before this call has been handed to the queue and an upload attempt finished.
@@ -159,8 +212,30 @@ enum AnonymousID {
         if let existing = defaults.string(forKey: defaultsKey), !existing.isEmpty {
             return existing
         }
+        return regenerate(in: defaults)
+    }
+
+    static func regenerate(in defaults: UserDefaults) -> String {
         let id = UUID().uuidString
         defaults.set(id, forKey: defaultsKey)
         return id
+    }
+}
+
+/// The identifier set with `Tsiva.identify(userId:)`, persisted so events of later launches carry it too.
+enum UserID {
+    static let defaultsKey = "com.tsiva.user_id"
+    static let maxLength = 128
+
+    static func load(from defaults: UserDefaults) -> String? {
+        defaults.string(forKey: defaultsKey).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    static func save(_ userId: String?, in defaults: UserDefaults) {
+        if let userId {
+            defaults.set(userId, forKey: defaultsKey)
+        } else {
+            defaults.removeObject(forKey: defaultsKey)
+        }
     }
 }

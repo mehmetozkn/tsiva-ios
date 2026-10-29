@@ -64,6 +64,28 @@ public enum Tsiva {
         current != nil
     }
 
+    /// Links all following events to your own identifier for the user, e.g. an account id after login. The
+    /// identifier is remembered across launches until `reset()` is called. Do not pass personal data such as an
+    /// email address; use an opaque id.
+    public static func identify(userId: String) {
+        guard let client = current else {
+            TsivaLogger(level: .warning).warning("identify() ignored: call Tsiva.configure() first")
+            return
+        }
+        client.identify(userId)
+    }
+
+    /// Forgets the identified user and starts a new anonymous identity. Call it when the user logs out, so the
+    /// next user's events are not attributed to them.
+    public static func reset() {
+        current?.reset()
+    }
+
+    /// The identifier set with `identify(userId:)`, or `nil`.
+    public static var userId: String? {
+        current?.userId
+    }
+
     /// The random install identifier attached to every event, or `nil` before `configure`.
     /// Useful for looking up a specific install's events when handling a support request.
     public static var anonymousId: String? {
@@ -89,7 +111,7 @@ public enum Tsiva {
     }
 
     /// Stops and removes the current client. Intended for tests.
-    static func reset() {
+    static func removeClient() {
         let removed = client.withLock { client -> TsivaClient? in
             defer { client = nil }
             return client

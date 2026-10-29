@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0 (2026-10-29)
+
+- `Tsiva.identify(userId:)` attaches your own user identifier to every following event and crash report, and
+  remembers it across launches; `Tsiva.reset()` forgets it and starts a new anonymous identity
+- Events and crash reports carry `user_id` when set
+
 ## 0.2.0 (2026-10-29)
 
 - Crash reporting: fatal signals (SIGSEGV, SIGBUS, SIGABRT, SIGILL, SIGFPE, SIGTRAP, including Swift runtime

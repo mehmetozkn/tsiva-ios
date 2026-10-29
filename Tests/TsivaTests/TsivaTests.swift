@@ -4,11 +4,11 @@ import XCTest
 final class TsivaTests: XCTestCase {
     override func setUp() {
         super.setUp()
-        Tsiva.reset()
+        Tsiva.removeClient()
     }
 
     override func tearDown() {
-        Tsiva.reset()
+        Tsiva.removeClient()
         super.tearDown()
     }
 

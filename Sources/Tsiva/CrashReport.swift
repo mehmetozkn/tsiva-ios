@@ -57,12 +57,14 @@ struct CrashReport: Codable, Equatable, Sendable {
     var images: [Image]
     var anonymousId: String
     var sessionId: String
+    var userId: String?
     var context: TsivaContext
 
     enum CodingKeys: String, CodingKey {
         case id, timestamp, kind, signal, exception, frames, images, context
         case anonymousId = "anonymous_id"
         case sessionId = "session_id"
+        case userId = "user_id"
     }
 }
 
@@ -70,6 +72,7 @@ struct CrashReport: Codable, Equatable, Sendable {
 struct CrashSession: Codable, Equatable, Sendable {
     var anonymousId: String
     var sessionId: String
+    var userId: String? = nil
     var context: TsivaContext
     /// File name of the app's executable, used to mark frames as in-app.
     var executableName: String
@@ -215,6 +218,7 @@ extension CrashReport {
             images: usedImages.values.sorted { $0.loadAddress < $1.loadAddress },
             anonymousId: session.anonymousId,
             sessionId: session.sessionId,
+            userId: session.userId,
             context: session.context
         )
     }

@@ -42,9 +42,7 @@ final class CrashReporter: Sendable {
 
         collectPreviousCrash()
 
-        do {
-            try JSONEncoder().encode(session).write(to: sessionURL, options: .atomic)
-        } catch {
+        guard saveSession(session) else {
             logger.error("Crash reporting disabled: could not save the session")
             return
         }
@@ -55,6 +53,18 @@ final class CrashReporter: Sendable {
         }
         installExceptionHandler()
         logger.debug("Crash reporting enabled")
+    }
+
+    /// Records the current session, so a crash can be attributed to it after the app restarts. Called again
+    /// when the user identity changes during the session.
+    @discardableResult
+    func saveSession(_ session: CrashSession) -> Bool {
+        do {
+            try JSONEncoder().encode(session).write(to: sessionURL, options: .atomic)
+            return true
+        } catch {
+            return false
+        }
     }
 
     /// Moves `crash.txt` from the previous launch into `pending/`, attributed to that launch's session.

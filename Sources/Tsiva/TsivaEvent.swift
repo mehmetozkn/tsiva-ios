@@ -11,6 +11,8 @@ public struct TsivaEvent: Sendable, Equatable, Codable {
     public let anonymousId: String
     /// Identifier of the SDK session the event was recorded in. A new session starts on each `configure`.
     public let sessionId: String
+    /// Your own identifier for the user, set with `Tsiva.identify(userId:)`. Nil until then.
+    public let userId: String?
     public let context: TsivaContext
 
     public init(
@@ -20,6 +22,7 @@ public struct TsivaEvent: Sendable, Equatable, Codable {
         properties: [String: TsivaValue] = [:],
         anonymousId: String,
         sessionId: String,
+        userId: String? = nil,
         context: TsivaContext
     ) {
         self.id = id
@@ -28,6 +31,7 @@ public struct TsivaEvent: Sendable, Equatable, Codable {
         self.properties = properties
         self.anonymousId = anonymousId
         self.sessionId = sessionId
+        self.userId = userId
         self.context = context
     }
 
@@ -38,6 +42,7 @@ public struct TsivaEvent: Sendable, Equatable, Codable {
         case properties
         case anonymousId = "anonymous_id"
         case sessionId = "session_id"
+        case userId = "user_id"
         case context
     }
 }
@@ -138,5 +143,5 @@ extension TsivaContext {
 /// Identity of this SDK, reported in every event and in the `User-Agent` header.
 public enum TsivaSDK {
     public static let name = "tsiva-ios"
-    public static let version = "0.2.0"
+    public static let version = "0.3.0"
 }
