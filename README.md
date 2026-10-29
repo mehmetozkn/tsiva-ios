@@ -18,6 +18,28 @@ Tsiva backend. It has no third-party dependencies.
 
 > **Status:** `0.3.1`, an early development release. The public API may still change before `1.0`.
 
+### Getting started
+
+Tsiva has three parts: this SDK in your app, the Tsiva API that receives the events, and the
+[Tsiva dashboard](https://tsiva-dashboard.vercel.app) where you look at them.
+
+1. **Get an account.** Accounts are invite-only: ask the Tsiva admin for an invite. You receive a one-time link
+   (valid for 7 days); open it, choose your password and you are logged in to the dashboard.
+2. **Create a project** in the dashboard (**Projeler → Yeni proje**). It shows the project's API key once, together
+   with the Swift setup code. If you lose the key, create a new one under **Ayarlar**.
+3. **Add the package** and **configure the SDK** at launch, as described below, with your key and the endpoint
+   `https://tsiva-api.onrender.com`.
+4. **Track events**, then run the app and open **Event'ler → Canlı mod** in the dashboard. Events arrive when 20
+   are queued, at least every 30 seconds, and when the app goes to the background.
+
+Good to know:
+
+- The API runs on a free plan that sleeps after 15 minutes without traffic. The first request after a pause can
+  take up to a minute; the SDK retries, so nothing is lost, and the dashboard shows a "server is waking up" screen.
+- Create a second project (e.g. "MyApp (Debug)") and give debug builds its key to keep test data out of your
+  numbers.
+- A new project's overview shows the same setup steps until its first event arrives.
+
 ### Installation
 
 **Xcode:** choose **File › Add Package Dependencies…**, enter the URL below and add the `Tsiva` library to your
@@ -51,7 +73,7 @@ struct MyApp: App {
     init() {
         Tsiva.configure(
             apiKey: "YOUR_PROJECT_KEY",
-            endpoint: URL(string: "https://your-tsiva-api.example.com")!
+            endpoint: URL(string: "https://tsiva-api.onrender.com")!
         )
     }
 
@@ -86,7 +108,7 @@ await Tsiva.flush()
 ```swift
 Tsiva.configure(TsivaConfiguration(
     apiKey: "YOUR_PROJECT_KEY",
-    endpoint: URL(string: "https://your-tsiva-api.example.com")!,
+    endpoint: URL(string: "https://tsiva-api.onrender.com")!,
     flushAt: 20,            // events per batch; also triggers an upload
     flushInterval: 30,      // seconds between periodic uploads
     maxQueueSize: 1000,     // oldest events are dropped beyond this
@@ -204,6 +226,28 @@ iOS uygulamaları için hafif bir event takip SDK'sı. Tsiva, uygulamanızın ka
 
 > **Durum:** `0.3.1`, erken geliştirme sürümü. Public API `1.0`'a kadar değişebilir.
 
+### Başlarken
+
+Tsiva üç parçadan oluşur: uygulamanızdaki bu SDK, event'leri alan Tsiva API'si ve onları incelediğiniz
+[Tsiva dashboard'u](https://tsiva-dashboard.vercel.app).
+
+1. **Hesap alın.** Hesaplar davetle açılır: Tsiva yöneticisinden davet isteyin. Tek kullanımlık bir link alırsınız
+   (7 gün geçerli); linki açıp şifrenizi belirlediğinizde dashboard'a giriş yapmış olursunuz.
+2. **Dashboard'da proje oluşturun** (**Projeler → Yeni proje**). Projenin API anahtarı, Swift kurulum koduyla
+   birlikte bir kez gösterilir. Anahtarı kaybederseniz **Ayarlar**'dan yeni bir anahtar oluşturun.
+3. Aşağıda anlatıldığı gibi **paketi ekleyin** ve uygulama açılırken anahtarınız ve
+   `https://tsiva-api.onrender.com` adresiyle **SDK'yı yapılandırın**.
+4. **Event gönderin**, uygulamayı çalıştırın ve dashboard'da **Event'ler → Canlı mod**'u açın. Event'ler 20 event
+   biriktiğinde, en geç 30 saniyede bir ve uygulama arka plana geçtiğinde gönderilir.
+
+Bilmekte fayda var:
+
+- API, 15 dakika trafik olmayınca uyuyan ücretsiz bir planda çalışır. Aradan sonraki ilk istek bir dakikaya kadar
+  sürebilir; SDK tekrar dener, veri kaybolmaz, dashboard da "sunucu uyanıyor" ekranı gösterir.
+- Test verisini gerçek rakamlardan ayırmak için ikinci bir proje (ör. "Uygulamam (Debug)") açıp debug build'lere
+  onun anahtarını verin.
+- Yeni bir projenin genel bakışı, ilk event gelene kadar aynı kurulum adımlarını gösterir.
+
 ### Kurulum
 
 **Xcode:** **File › Add Package Dependencies…** menüsünü seçin, aşağıdaki adresi girin ve `Tsiva`
@@ -237,7 +281,7 @@ struct MyApp: App {
     init() {
         Tsiva.configure(
             apiKey: "PROJE_ANAHTARINIZ",
-            endpoint: URL(string: "https://tsiva-api-adresiniz.example.com")!
+            endpoint: URL(string: "https://tsiva-api.onrender.com")!
         )
     }
 
@@ -272,7 +316,7 @@ await Tsiva.flush()
 ```swift
 Tsiva.configure(TsivaConfiguration(
     apiKey: "PROJE_ANAHTARINIZ",
-    endpoint: URL(string: "https://tsiva-api-adresiniz.example.com")!,
+    endpoint: URL(string: "https://tsiva-api.onrender.com")!,
     flushAt: 20,            // paket başına event sayısı; bu sayıya ulaşınca gönderim başlar
     flushInterval: 30,      // periyodik gönderimler arası saniye
     maxQueueSize: 1000,     // bu sayı aşılınca en eski event'ler silinir
